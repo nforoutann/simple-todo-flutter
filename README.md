@@ -17,7 +17,7 @@ This project is a simple Todo List application built using Flutter for the front
 
 # Project structure
 
-## branch overview
+## Branch overview
 
 There are two branches in this repository. The main branch contains a pure Flutter-Dart implementation, while the JSON branch includes the backend and transfers data using JSON (without storing it in a database).
 
