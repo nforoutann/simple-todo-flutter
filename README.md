@@ -10,7 +10,7 @@ This project is a simple Todo List application built using Flutter for the front
 - Mark Tasks as Done: Users can mark tasks as completed, moving them to the "Done Tasks" section.
 - Remove Tasks: Both pending and completed tasks can be removed.
 
-## Demo
+# Demo
 
 ![App Screenshot](TodoList/assets/demo.jpg)
 
@@ -29,6 +29,6 @@ This project is a simple Todo List application built using Flutter for the front
 
 
 
-
 ## 🚀 About Me
+- [@nforoutann](https://github.com/nforoutann)
 I'm a Computer Engineering (Computer Science) student at Shahid Beheshti University, passionate about technology, a lifelong learner, and professional nerd.
