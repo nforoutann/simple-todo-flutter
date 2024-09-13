@@ -1,8 +1,6 @@
 import com.google.gson.Gson;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -42,19 +40,26 @@ class ClientHandler extends Thread {
         this.tasks = tasks;
         dos = new DataOutputStream(socket.getOutputStream());
         dis = new DataInputStream(socket.getInputStream());
+
+        System.out.println("connected to the client");
     }
 
     @Override
     public void run(){
         try{
             System.out.println("Listening the command");
-            String command = dis.readUTF();
+            String command = "";
+            int index = dis.read();
+            while(index != 0){
+                command = command + (char)index;
+                index = dis.read();
+            }
             if(command.equals("getTasks")){
                 System.out.println("The command is received");
 
                 Gson gson = new Gson();
                 String jsonTasks = gson.toJson(tasks);
-                dos.writeUTF(jsonTasks);
+                dos.write(jsonTasks.getBytes());
 
                 System.out.println("The data has just sent");
 
