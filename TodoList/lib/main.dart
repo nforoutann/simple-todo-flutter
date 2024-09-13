@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:todo/Task.dart';
+import 'package:todolist/Task.dart';
 
 void main() {
   runApp(MyApp());
@@ -96,7 +96,7 @@ class _TodoScreenState extends State<TodoScreen> {
             style: TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w900,
-              fontStyle: FontStyle.italic
+                fontStyle: FontStyle.italic
             ),
           ),
         ),
@@ -147,8 +147,8 @@ class _TodoListState extends State<TodoList> {
                         child: Text(
                           undoneTasks[index].title,
                           style: const TextStyle(
-                              fontSize: 18,
-                              fontStyle: FontStyle.italic,
+                            fontSize: 18,
+                            fontStyle: FontStyle.italic,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
