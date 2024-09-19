@@ -1,3 +1,7 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:todolist/Task.dart';
 
@@ -22,17 +26,60 @@ class TodoScreen extends StatefulWidget {
 }
 
 class _TodoScreenState extends State<TodoScreen> {
-  // Moved the task list to the StatefulWidget
-  List<Task> tasks = [
-    Task(title: 'hello world', done: false),
-    Task(title: 'have a good day', done: true),
-    Task(title: 'the university is started', done: false),
-    Task(title: 'check your emails', done: false),
-    Task(title: 'do your hw', done: true),
-    Task(title: 'hang out with your friends', done: false),
-    Task(title: 'do not forget your ap assignment', done: false),
-    Task(title: 'read your book', done: true),
-  ];
+  List<Task> tasks = [];
+  bool _isLoading = true; // Boolean to track if data is still loading
+
+  @override
+  void initState() {
+    super.initState();
+    getTask(); // Fetch tasks when the screen is initialized
+  }
+
+  // Network method to fetch tasks from server
+  Future<void> getTask() async {
+    try {
+      Socket socket = await Socket.connect('192.168.1.8', 8080);
+      print('Connected to the network');
+
+      // Request tasks from the server
+      socket.write('getTasks\u0000');
+      List<Task> fetchedTasks = [];
+
+      socket.listen((List<int> data) {
+        try {
+          String jsonString = utf8.decode(data); // Convert byte data to string
+          List<dynamic> jsonList = jsonDecode(jsonString); // Parse JSON string
+
+          // Parse each item as Task and update the state
+          fetchedTasks = jsonList.map((json) => Task.fromJson(json)).toList();
+
+          // Update the tasks and loading state
+          setState(() {
+            tasks = fetchedTasks;
+            _isLoading = false; // Data is loaded
+          });
+        } catch (e) {
+          print('Error parsing data from server: $e');
+          setState(() {
+            _isLoading = false; // Stop loading even if there's an error
+          });
+        } finally {
+          socket.close(); // Close the socket after receiving the data
+        }
+      }, onError: (e) {
+        print('Error receiving data from server: $e');
+        setState(() {
+          _isLoading = false; // Stop loading if there's a socket error
+        });
+        socket.close(); // Close the socket on error
+      });
+    } catch (e) {
+      print('Connection failed: $e');
+      setState(() {
+        _isLoading = false; // Stop loading if connection fails
+      });
+    }
+  }
 
   // Function to add a new task
   void _addNewTask(String taskTitle) {
@@ -44,49 +91,41 @@ class _TodoScreenState extends State<TodoScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      floatingActionButton: Container(
-        margin: EdgeInsets.only(right: 20, bottom: 10),
-        child: FloatingActionButton(
-          onPressed: () {
-            TextEditingController taskTitle = TextEditingController();
-            showDialog(
-              context: context,
-              builder: (BuildContext context) {
-                return AlertDialog(
-                  title: const Text('Create New Task'),
-                  content: TextField(
-                    decoration: const InputDecoration(hintText: 'Enter task title'),
-                    controller: taskTitle,
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          TextEditingController taskTitle = TextEditingController();
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: const Text('Create New Task'),
+                content: TextField(
+                  decoration: const InputDecoration(hintText: 'Enter task title'),
+                  controller: taskTitle,
+                ),
+                actions: [
+                  TextButton(
+                    child: const Text('Cancel'),
+                    onPressed: () {
+                      Navigator.of(context).pop(); // Close the dialog
+                    },
                   ),
-                  actions: [
-                    TextButton(
-                      child: const Text('Cancel'),
-                      onPressed: () {
-                        Navigator.of(context).pop(); // Close the dialog
-                      },
-                    ),
-                    TextButton(
-                      child: const Text('Create'),
-                      onPressed: () {
-                        if (taskTitle.text.isNotEmpty && !tasks.contains(Task(title: taskTitle.text, done: false))){
-                          _addNewTask(taskTitle.text); // Add the new task
-                        }
-                        Navigator.of(context).pop(); // Close the dialog
-                      },
-                    ),
-                  ],
-                );
-              },
-            );
-          },
-          backgroundColor: Colors.indigoAccent,
-          elevation: 4.0,
-          shape: CircleBorder(),
-          child: const Icon(
-            Icons.add,
-            size: 37,
-          ),
-        ),
+                  TextButton(
+                    child: const Text('Create'),
+                    onPressed: () {
+                      if (taskTitle.text.isNotEmpty) {
+                        _addNewTask(taskTitle.text); // Add the new task
+                      }
+                      Navigator.of(context).pop(); // Close the dialog
+                    },
+                  ),
+                ],
+              );
+            },
+          );
+        },
+        backgroundColor: Colors.indigoAccent,
+        child: const Icon(Icons.add, size: 37),
       ),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -96,13 +135,14 @@ class _TodoScreenState extends State<TodoScreen> {
             style: TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w900,
-                fontStyle: FontStyle.italic
-            ),
+                fontStyle: FontStyle.italic),
           ),
         ),
       ),
       backgroundColor: const Color(0xFF131315),
-      body: TodoList(tasks: tasks),
+      body: _isLoading
+          ? Center(child: CircularProgressIndicator()) // Show loading spinner
+          : TodoList(tasks: tasks), // Show the list once data is loaded
     );
   }
 }
@@ -190,7 +230,7 @@ class _TodoListState extends State<TodoList> {
               );
             },
           ),
-          if(doneTasks.length != 0)...{
+          if (doneTasks.isNotEmpty) ...{
             Container(
               margin: EdgeInsets.all(7),
               child: const Text(
@@ -199,8 +239,7 @@ class _TodoListState extends State<TodoList> {
                     color: Colors.white,
                     fontSize: 20,
                     fontStyle: FontStyle.italic,
-                    fontWeight: FontWeight.w900
-                ),
+                    fontWeight: FontWeight.w900),
               ),
             ),
           },
